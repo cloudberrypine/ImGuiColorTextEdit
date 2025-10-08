@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <map>
 #include <regex>
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 
 class TextEditor
