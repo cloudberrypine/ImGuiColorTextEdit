@@ -1139,12 +1139,16 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 		ImGuiContext &g = *ImGui::GetCurrentContext();
 		glm::vec2 cursor_screen_pos = ImGui::GetCursorScreenPos();
 		ImGuiWindow *window = ImGui::GetCurrentWindow();
-		ImGuiPlatformImeData* ime_data = &g.PlatformImeData; // (this is a public struct, passed to io.Platform_SetImeDataFn() handler)
-		ime_data->WantVisible = true;
-		ime_data->WantTextInput = true;
-		ime_data->InputPos = ImVec2(cursor_screen_pos.x - 1.0f, cursor_screen_pos.y - g.FontSize);
-		ime_data->InputLineHeight = g.FontSize;
-		ime_data->ViewportId = window->Viewport->ID;
+
+		if (ImGui::IsWindowHovered()) {
+			ImGuiPlatformImeData* ime_data = &g.PlatformImeData; // (this is a public struct, passed to io.Platform_SetImeDataFn() handler)
+			ime_data->WantVisible = true;
+			ime_data->WantTextInput = true;
+			ime_data->InputPos = ImVec2(cursor_screen_pos.x - 1.0f, cursor_screen_pos.y - g.FontSize);
+			ime_data->InputLineHeight = g.FontSize;
+			ime_data->ViewportId = window->Viewport->ID;
+		}
+
 		//ImGui::PushAllowKeyboardFocus(true);
 	}
 
@@ -2021,7 +2025,7 @@ const TextEditor::Palette & TextEditor::GetDarkPalette()
 	const static Palette p = { {
 			0xff7f7f7f,	// Default
 			0xffd69c56,	// Keyword	
-			0xff00ff00,	// Number
+			0xff66dddd,	// Number
 			0xff7070e0,	// String
 			0xff70a0e0, // Char literal
 			0xffffffff, // Punctuation
