@@ -658,6 +658,16 @@ std::string &TextEditor::GetWordUnderCursor() const
 	return GetWordAt(c);
 }
 
+TextEditor::Glyph TextEditor::GetGlyphAt(const Coordinates & aCoords) const
+{
+	if (aCoords.mLine == -1 || aCoords.mColumn == -1) {
+		return Glyph(' ', PaletteIndex::Default);
+	}
+
+	auto& line = mLines[aCoords.mLine];
+	return line[aCoords.mColumn];
+}
+
 std::string &TextEditor::GetWordAt(const Coordinates & aCoords) const
 {
 	auto start = FindWordStart(aCoords);
@@ -905,6 +915,84 @@ void TextEditor::Render()
 		float spaceSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, " ", nullptr, nullptr).x;
 
 		std::string highlightedWord = GetWordAt(mState.mCursorPosition);
+
+		Coordinates scopeCheckCursor = mState.mCursorPosition;
+		scopeCheckCursor.mColumn = std::min((int)mLines[scopeCheckCursor.mLine].size() - 1, scopeCheckCursor.mColumn);
+		Glyph cursorGlyph = GetGlyphAt(scopeCheckCursor);
+
+		Coordinates scopeStartCoords = Coordinates(INT_MAX, INT_MAX);
+		Coordinates scopeEndCoords = Coordinates(INT_MAX, INT_MAX);
+		if (cursorGlyph.mChar == '{' || cursorGlyph.mChar == '(' || cursorGlyph.mChar == '[' || cursorGlyph.mChar == '<') {
+			scopeStartCoords = scopeCheckCursor;
+		}
+		else if (cursorGlyph.mChar == '}' || cursorGlyph.mChar == ')' || cursorGlyph.mChar == ']' || cursorGlyph.mChar == '>') {
+			scopeEndCoords = scopeCheckCursor;
+		}
+		if (scopeStartCoords.mLine == INT_MAX && scopeEndCoords.mLine == INT_MAX && scopeCheckCursor.mColumn > 0 && mState.mCursorPosition.mColumn <= (int)mLines[scopeCheckCursor.mLine].size() - 1) {
+			scopeCheckCursor.mColumn -= 1;
+			cursorGlyph = GetGlyphAt(scopeCheckCursor);
+		}
+		if (cursorGlyph.mChar == '{' || cursorGlyph.mChar == '(' || cursorGlyph.mChar == '[' || cursorGlyph.mChar == '<') {
+			scopeStartCoords = scopeCheckCursor;
+		}
+		else if (cursorGlyph.mChar == '}' || cursorGlyph.mChar == ')' || cursorGlyph.mChar == ']' || cursorGlyph.mChar == '>') {
+			scopeEndCoords = scopeCheckCursor;
+		}
+
+		if (scopeStartCoords.mLine != INT_MAX) {
+			char startChar = cursorGlyph.mChar;
+			char endChar = startChar == '{' ? '}' : (startChar == '[' ? ']' : (startChar == '<' ? '>' : ')'));
+			int lineNo = scopeStartCoords.mLine;
+			int depth = 0;
+			while (lineNo <= lineMax) {
+				auto& line = mLines[lineNo];
+				int i = lineNo == scopeStartCoords.mLine ? scopeStartCoords.mColumn + 1 : 0;
+				while (i < line.size()) {
+					Char c = line[i].mChar;
+					if (c == startChar) {
+						depth ++;
+					}
+					else if (c == endChar) {
+						depth--;
+					}
+					if (depth < 0) {
+						scopeEndCoords = Coordinates(lineNo, i);
+						break;
+					}
+					i++;
+				}
+				if (scopeEndCoords.mLine != INT_MAX) {
+					break;
+				}
+				lineNo++;
+			}
+		}
+		else if (scopeEndCoords.mLine != INT_MAX) {
+			char startChar = cursorGlyph.mChar;
+			char endChar = startChar == '}' ? '{' : (startChar == ']' ? '[' :  (startChar == '>' ? '<' : '('));
+			int lineMin = lineNo;
+			int lineNo = scopeEndCoords.mLine;
+			int depth = 0;
+			while (lineNo >= lineMin) {
+				auto& line = mLines[lineNo];
+				int i = lineNo == scopeEndCoords.mLine ? scopeEndCoords.mColumn - 1 : mLines[lineNo].size() - 1;
+				while (i >= 0) {
+					Char c = line[i].mChar;
+					if (c == startChar) { depth ++; }
+					else if (c == endChar) { depth--; }
+					if (depth < 0) {
+						scopeStartCoords = Coordinates(lineNo, i);
+						break;
+					}
+					i--;
+				}
+				if (scopeStartCoords.mLine != INT_MAX) {
+					break;
+				}
+				lineNo--;
+			}
+		}
+
 		while (lineNo <= lineMax)
 		{
 			ImVec2 lineStartScreenPos = ImVec2(cursorScreenPos.x, cursorScreenPos.y + lineNo * mCharAdvance.y);
@@ -1082,27 +1170,31 @@ void TextEditor::Render()
 				++columnNo;
 			}
 
-			if (!highlightedWord.empty()) {
-				for (int i = 0; i < line.size();) {
-					auto& glyph = line[i];
-					Char c = glyph.mChar;
+			for (int i = 0; i < line.size();) {
+				auto& glyph = line[i];
+				Char c = glyph.mChar;
 
-					if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
-						std::string &currentWord = GetWordAt(Coordinates(lineNo, i));
-						auto textSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, currentWord.c_str(), nullptr, nullptr);
+				Coordinates coords = Coordinates(lineNo, i);
+				if (!highlightedWord.empty() && ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
+					std::string &currentWord = GetWordAt(coords);
+					auto textSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, currentWord.c_str(), nullptr, nullptr);
 
-						if (currentWord[0] == highlightedWord[0] && currentWord == highlightedWord) {
-							const ImVec2 newOffset(textScreenPos.x + highlightBufferOffset.x, textScreenPos.y + highlightBufferOffset.y);
-							drawList->AddLine(newOffset + ImVec2(0, textSize.y - 1), newOffset + textSize + ImVec2(0, -1), IM_COL32(200, 200, 200, 255));
-						}
-						highlightBufferOffset.x += textSize.x;
-						i += currentWord.size();
-
-					} else {
-						auto textSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, mLineBuffer.data() + i, mLineBuffer.data() + i + 1, nullptr);
-						highlightBufferOffset.x += textSize.x;
-						i += 1;
+					if (currentWord[0] == highlightedWord[0] && currentWord == highlightedWord) {
+						const ImVec2 newOffset(textScreenPos.x + highlightBufferOffset.x, textScreenPos.y + highlightBufferOffset.y);
+						drawList->AddLine(newOffset + ImVec2(0, textSize.y - 1), newOffset + textSize + ImVec2(0, -1), IM_COL32(200, 200, 200, 255));
 					}
+					highlightBufferOffset.x += textSize.x;
+					i += currentWord.size();
+
+				} else {
+					auto textSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, mLineBuffer.data() + i, mLineBuffer.data() + i + 1, nullptr);
+
+					if (coords == scopeStartCoords || coords == scopeEndCoords) {
+						const ImVec2 newOffset(textScreenPos.x + highlightBufferOffset.x, textScreenPos.y + highlightBufferOffset.y);
+						drawList->AddLine(newOffset + ImVec2(0, textSize.y - 1), newOffset + textSize + ImVec2(0, -1), IM_COL32(200, 200, 200, 255));
+					}
+					highlightBufferOffset.x += textSize.x;
+					i += 1;
 				}
 			}
 

@@ -343,6 +343,7 @@ private:
 	void DeleteSelection();
 	std::string &GetWordUnderCursor() const;
 	std::string &GetWordAt(const Coordinates& aCoords) const;
+	Glyph GetGlyphAt(const Coordinates& aCoords) const;
 	ImU32 GetGlyphColor(const Glyph& aGlyph) const;
 
 	void HandleKeyboardInputs();
