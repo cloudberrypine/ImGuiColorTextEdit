@@ -855,6 +855,7 @@ void TextEditor::HandleMouseInputs()
 				io.WantCaptureMouse = true;
 				mState.mCursorPosition = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
 				SetSelection(mInteractiveStart, mInteractiveEnd, mSelectionMode);
+
 			}
 		}
 	}
@@ -1203,6 +1204,10 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 	ImGui::PopStyleColor();
 
 	mWithinRender = false;
+	if (mCursorPositionChanged) {
+		auto timeEnd = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+		mStartTime = timeEnd - 400;
+	}
 }
 
 void TextEditor::SetText(const std::string & aText)
@@ -2501,10 +2506,6 @@ void TextEditor::EnsureCursorVisible()
 		ImGui::SetScrollX(std::max(0.0f, len + mTextStart - 4));
 	if (len + mTextStart > right - 4)
 		ImGui::SetScrollX(std::max(0.0f, len + mTextStart + 4 - width));
-
-
-	auto timeEnd = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-	mStartTime = timeEnd - 400;
 }
 
 int TextEditor::GetPageSize() const
