@@ -715,7 +715,9 @@ void TextEditor::HandleKeyboardInputs()
 			Undo();
 		else if (!IsReadOnly() && !ctrl && !shift && alt && ImGui::IsKeyPressed(ImGuiKey_Backspace))
 			Undo();
-		else if (!IsReadOnly() && ctrl && !shift && !alt && ImGui::IsKeyPressed(ImGuiKey_Y))
+		else if (!IsReadOnly() &&
+			((ctrl && !shift && !alt && ImGui::IsKeyPressed(ImGuiKey_Y)) ||
+			(ctrl && shift && !alt && ImGui::IsKeyPressed(ImGuiKey_Z))))
 			Redo();
 		else if (!ctrl && !alt && ImGui::IsKeyPressed(ImGuiKey_UpArrow))
 			MoveUp(1, shift);
@@ -784,7 +786,7 @@ void TextEditor::HandleMouseInputs()
 
 	if (ImGui::IsWindowHovered())
 	{
-		if (!shift && !alt)
+		if (!alt)
 		{
 			auto click = ImGui::IsMouseClicked(0);
 			auto doubleClick = ImGui::IsMouseDoubleClicked(0);
@@ -831,7 +833,13 @@ void TextEditor::HandleMouseInputs()
 			*/
 			else if (click)
 			{
-				mState.mCursorPosition = mInteractiveStart = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
+				if (shift) {
+					mState.mCursorPosition = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
+					SetSelection(mInteractiveStart, mInteractiveEnd, mSelectionMode);
+
+				} else {
+					mState.mCursorPosition = mInteractiveStart = mInteractiveEnd = ScreenPosToCoordinates(ImGui::GetMousePos());
+				}
 				if (ctrl)
 					mSelectionMode = SelectionMode::Word;
 				else
