@@ -652,18 +652,19 @@ TextEditor::Line& TextEditor::InsertLine(int aIndex)
 	return result;
 }
 
-std::string TextEditor::GetWordUnderCursor() const
+std::string &TextEditor::GetWordUnderCursor() const
 {
 	auto c = GetCursorPosition();
 	return GetWordAt(c);
 }
 
-std::string TextEditor::GetWordAt(const Coordinates & aCoords) const
+std::string &TextEditor::GetWordAt(const Coordinates & aCoords) const
 {
 	auto start = FindWordStart(aCoords);
 	auto end = FindWordEnd(aCoords);
 
-	std::string r;
+	static std::string r;
+	r.clear();
 
 	auto istart = GetCharacterIndex(start);
 	auto iend = GetCharacterIndex(end);
@@ -902,6 +903,7 @@ void TextEditor::Render()
 	{
 		float spaceSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, " ", nullptr, nullptr).x;
 
+		std::string highlightedWord = GetWordAt(mState.mCursorPosition);
 		while (lineNo <= lineMax)
 		{
 			ImVec2 lineStartScreenPos = ImVec2(cursorScreenPos.x, cursorScreenPos.y + lineNo * mCharAdvance.y);
@@ -1020,6 +1022,7 @@ void TextEditor::Render()
 			// Render colorized text
 			auto prevColor = line.empty() ? mPalette[(int)PaletteIndex::Default] : GetGlyphColor(line[0]);
 			ImVec2 bufferOffset;
+			ImVec2 highlightBufferOffset = bufferOffset;
 
 			for (int i = 0; i < line.size();)
 			{
@@ -1076,6 +1079,30 @@ void TextEditor::Render()
 						mLineBuffer.push_back(line[i++].mChar);
 				}
 				++columnNo;
+			}
+
+			if (!highlightedWord.empty()) {
+				for (int i = 0; i < line.size();) {
+					auto& glyph = line[i];
+					Char c = glyph.mChar;
+
+					if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+						std::string &currentWord = GetWordAt(Coordinates(lineNo, i));
+						auto textSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, currentWord.c_str(), nullptr, nullptr);
+
+						if (currentWord[0] == highlightedWord[0] && currentWord == highlightedWord) {
+							const ImVec2 newOffset(textScreenPos.x + highlightBufferOffset.x, textScreenPos.y + highlightBufferOffset.y);
+							drawList->AddLine(newOffset + ImVec2(0, textSize.y - 1), newOffset + textSize + ImVec2(0, -1), IM_COL32(200, 200, 200, 255));
+						}
+						highlightBufferOffset.x += textSize.x;
+						i += currentWord.size();
+
+					} else {
+						auto textSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, mLineBuffer.data() + i, mLineBuffer.data() + i + 1, nullptr);
+						highlightBufferOffset.x += textSize.x;
+						i += 1;
+					}
+				}
 			}
 
 			if (!mLineBuffer.empty())
@@ -2474,6 +2501,10 @@ void TextEditor::EnsureCursorVisible()
 		ImGui::SetScrollX(std::max(0.0f, len + mTextStart - 4));
 	if (len + mTextStart > right - 4)
 		ImGui::SetScrollX(std::max(0.0f, len + mTextStart + 4 - width));
+
+
+	auto timeEnd = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	mStartTime = timeEnd - 400;
 }
 
 int TextEditor::GetPageSize() const
