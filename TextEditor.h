@@ -194,6 +194,7 @@ public:
 
 	void SetErrorMarkers(const ErrorMarkers& aMarkers) { mErrorMarkers = aMarkers; }
 	void SetBreakpoints(const Breakpoints& aMarkers) { mBreakpoints = aMarkers; }
+	void setRunLines(const std::unordered_map<int, std::vector<int>> &aRunLines) { mRunLines = aRunLines; }
 
 	void Render(const char* aTitle, const ImVec2& aSize = ImVec2(), bool aBorder = false);
 	void SetText(const std::string& aText);
@@ -252,6 +253,8 @@ public:
 	void SelectWordUnderCursor();
 	void SelectAll();
 	bool HasSelection() const;
+
+	int GetClickedDebugLine() const { return mClickedDebugLine; }
 
 	void Copy();
 	void Cut();
@@ -381,11 +384,13 @@ private:
 
 	bool mCheckComments;
 	Breakpoints mBreakpoints;
+	std::unordered_map<int, std::vector<int>> mRunLines;
 	ErrorMarkers mErrorMarkers;
 	ImVec2 mCharAdvance;
 	Coordinates mInteractiveStart, mInteractiveEnd;
 	std::string mLineBuffer;
 	uint64_t mStartTime;
+	int mClickedDebugLine = -1;
 
 	float mLastClick;
 };

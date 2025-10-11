@@ -1111,7 +1111,6 @@ void TextEditor::Render()
 			// Render colorized text
 			auto prevColor = line.empty() ? mPalette[(int)PaletteIndex::Default] : GetGlyphColor(line[0]);
 			ImVec2 bufferOffset;
-			ImVec2 highlightBufferOffset = bufferOffset;
 
 			for (int i = 0; i < line.size();)
 			{
@@ -1170,9 +1169,55 @@ void TextEditor::Render()
 				++columnNo;
 			}
 
+			bool hasFoundFirstNonWhitespace = false;
+
+			ImVec2 highlightBufferOffset = ImVec2(0, 0);
 			for (int i = 0; i < line.size();) {
 				auto& glyph = line[i];
 				Char c = glyph.mChar;
+
+				if (!hasFoundFirstNonWhitespace && c != '\t' && c != ' ') {
+					hasFoundFirstNonWhitespace = true;
+					auto it = mRunLines.find(lineNo);
+					if (it != mRunLines.end() && !it->second.empty()) {
+						float rectSize = 15;
+						float spacing = 1;
+						std::vector<int> &runIndices = it->second;
+						const ImVec2 anchor(textScreenPos.x + highlightBufferOffset.x - 1, textScreenPos.y + highlightBufferOffset.y + ImGui::GetTextLineHeight());
+						int runIndicesCount = (int)runIndices.size();
+						for (int runIndicesI = 0; runIndicesI < runIndicesCount; runIndicesI++) {
+							ImVec2 rectTopLeft = anchor - ImVec2(runIndicesCount * (rectSize + spacing), rectSize) + ImVec2(runIndicesI * (rectSize + spacing), 0);
+							ImVec2 mousePos = ImGui::GetMousePos();
+							bool isHovered = false;
+							bool isActive = false;
+							if (ImGui::IsWindowHovered() &&
+								mousePos.x >= rectTopLeft.x && mousePos.x <= rectTopLeft.x + rectSize &&
+								mousePos.y >= rectTopLeft.y && mousePos.y <= rectTopLeft.y + rectSize) {
+								if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+									isActive = true;
+								} else {
+									isHovered = true;
+								}
+								if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+									mClickedDebugLine = runIndices[runIndicesI];
+									printf("clicked %d\n", runIndices[runIndicesI] + 1);
+								}
+							}
+							ImU32 rectColor = IM_COL32(166, 64, 64, 255);
+							if (isHovered) {
+								rectColor = IM_COL32(206, 94, 94, 255);
+							} else if (isActive) {
+								rectColor = IM_COL32(226, 114, 114, 255);
+							}
+							drawList->AddRectFilled(rectTopLeft, rectTopLeft + ImVec2(rectSize, rectSize), rectColor);
+							char numberText[8];
+							snprintf(numberText, sizeof(numberText), "%d", runIndices[runIndicesI] + 1);
+							ImVec2 textSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, numberText, nullptr, nullptr);
+							drawList->AddText(rectTopLeft + ImVec2(rectSize / 2.0f, rectSize / 2.0f) - ImVec2(textSize.x / 2.0f, textSize.y / 2.0f), IM_COL32_WHITE, numberText);
+
+						}
+					}
+				}
 
 				Coordinates coords = Coordinates(lineNo, i);
 				if (!highlightedWord.empty() && ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
@@ -1248,6 +1293,7 @@ void TextEditor::Render()
 
 void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 {
+	mClickedDebugLine = -1;
 	mWithinRender = true;
 	mTextChanged = false;
 	mCursorPositionChanged = false;
