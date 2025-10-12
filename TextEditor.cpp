@@ -1200,7 +1200,6 @@ void TextEditor::Render()
 								}
 								if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
 									mClickedDebugLine = runIndices[runIndicesI];
-									printf("clicked %d\n", runIndices[runIndicesI] + 1);
 								}
 							}
 							ImU32 rectColor = IM_COL32(166, 64, 64, 255);
