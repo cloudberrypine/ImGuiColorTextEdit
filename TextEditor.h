@@ -120,6 +120,13 @@ public:
 		}
 	};
 
+	struct Variable
+	{
+		std::string name;
+		std::string stringValue;
+		std::unordered_map<std::string, Variable> members;
+	};
+
 	struct Identifier
 	{
 		Coordinates mLocation;
@@ -189,6 +196,16 @@ public:
 	void SetLanguageDefinition(const LanguageDefinition& aLanguageDef);
 	const LanguageDefinition& GetLanguageDefinition() const { return mLanguageDefinition; }
 
+	void SetVariables(const std::unordered_map<std::string, Variable> &variables)
+	{
+		mVariables = variables;
+		mMembers.clear();
+		for (auto &v : mVariables) {
+			for (auto &m : v.second.members) {
+				mMembers.insert(m.second.name);
+			}
+		}
+	}
 	const Palette& GetPalette() const { return mPaletteBase; }
 	void SetPalette(const Palette& aValue);
 
@@ -381,6 +398,10 @@ private:
 	Palette mPalette;
 	LanguageDefinition mLanguageDefinition;
 	RegexList mRegexList;
+
+
+	std::unordered_map<std::string, Variable> mVariables;
+	std::unordered_set<std::string> mMembers;
 
 	bool mCheckComments;
 	Breakpoints mBreakpoints;

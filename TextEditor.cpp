@@ -1255,7 +1255,8 @@ void TextEditor::Render()
 		// Draw a tooltip on known identifiers/preprocessor symbols
 		if (ImGui::IsMousePosValid())
 		{
-			auto id = GetWordAt(ScreenPosToCoordinates(ImGui::GetMousePos()));
+			Coordinates mouseCoords = ScreenPosToCoordinates(ImGui::GetMousePos());
+			auto &id = GetWordAt(mouseCoords);
 			if (!id.empty())
 			{
 				auto it = mLanguageDefinition.mIdentifiers.find(id);
@@ -1273,6 +1274,34 @@ void TextEditor::Render()
 						ImGui::BeginTooltip();
 						ImGui::TextUnformatted(pi->second.mDeclaration.c_str());
 						ImGui::EndTooltip();
+					} else {
+						auto vi = mVariables.find(id);
+						if (vi != mVariables.end()) {
+							ImGui::BeginTooltip();
+							ImGui::TextUnformatted(vi->second.stringValue.c_str());
+							ImGui::EndTooltip();
+						} else {
+							auto mi = mMembers.find(id);
+							if (mi != mMembers.end()) {
+								std::string memberName = id;
+								Coordinates prevWordCoords = FindWordStart(mouseCoords);
+								prevWordCoords.mColumn--;
+								char prevChar = GetGlyphAt(prevWordCoords).mChar;
+								if (prevWordCoords.mColumn > 2 && GetGlyphAt(prevWordCoords).mChar == '.') {
+									prevWordCoords.mColumn--;
+									std::string &parentName = GetWordAt(prevWordCoords);
+									auto vi2 = mVariables.find(parentName);
+									if (vi2 != mVariables.end()) {
+										auto mi2 = vi2->second.members.find(memberName);
+										if (mi2 != vi2->second.members.end()) {
+											ImGui::BeginTooltip();
+											ImGui::TextUnformatted(mi2->second.stringValue.c_str());
+											ImGui::EndTooltip();
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 			}
