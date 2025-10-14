@@ -1253,9 +1253,10 @@ void TextEditor::Render()
 		}
 
 		// Draw a tooltip on known identifiers/preprocessor symbols
-		if (ImGui::IsMousePosValid())
+		if (ImGui::IsMousePosValid() && ImGui::IsWindowHovered())
 		{
-			Coordinates mouseCoords = ScreenPosToCoordinates(ImGui::GetMousePos());
+			float spaceSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, " ").x;
+			Coordinates mouseCoords = ScreenPosToCoordinates(ImGui::GetMousePos() - ImVec2(spaceSize / 2.0f, 0));
 			auto &id = GetWordAt(mouseCoords);
 			if (!id.empty())
 			{
@@ -1283,19 +1284,39 @@ void TextEditor::Render()
 						} else {
 							auto mi = mMembers.find(id);
 							if (mi != mMembers.end()) {
-								std::string memberName = id;
+								static std::vector<std::string> memberPath;
+								memberPath.clear();
+								memberPath.push_back(id);
 								Coordinates prevWordCoords = FindWordStart(mouseCoords);
-								prevWordCoords.mColumn--;
-								char prevChar = GetGlyphAt(prevWordCoords).mChar;
-								if (prevWordCoords.mColumn > 2 && GetGlyphAt(prevWordCoords).mChar == '.') {
+								while (true) {
+									prevWordCoords.mColumn--;
+									char prevChar = GetGlyphAt(prevWordCoords).mChar;
+									if (prevWordCoords.mColumn < 2 || prevChar != '.') {
+										break;
+									}
+
 									prevWordCoords.mColumn--;
 									std::string &parentName = GetWordAt(prevWordCoords);
-									auto vi2 = mVariables.find(parentName);
+									memberPath.push_back(parentName);
+									prevWordCoords = FindWordStart(prevWordCoords);
+								}
+								if (memberPath.size() > 1) {
+									auto vi2 = mVariables.find(memberPath.back());
 									if (vi2 != mVariables.end()) {
-										auto mi2 = vi2->second.members.find(memberName);
-										if (mi2 != vi2->second.members.end()) {
+										Variable *variable = &vi2->second;
+										memberPath.pop_back();
+										while (!memberPath.empty() && variable) {
+											auto vi3 = variable->members.find(memberPath.back());
+											memberPath.pop_back();
+											if (vi3 != variable->members.end()) {
+												variable = &vi3->second;
+											} else {
+												variable = nullptr;
+											}
+										}
+										if (variable) {
 											ImGui::BeginTooltip();
-											ImGui::TextUnformatted(mi2->second.stringValue.c_str());
+											ImGui::TextUnformatted(variable->stringValue.c_str());
 											ImGui::EndTooltip();
 										}
 									}

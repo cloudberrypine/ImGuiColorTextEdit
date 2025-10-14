@@ -196,14 +196,22 @@ public:
 	void SetLanguageDefinition(const LanguageDefinition& aLanguageDef);
 	const LanguageDefinition& GetLanguageDefinition() const { return mLanguageDefinition; }
 
+	void addMembers(std::unordered_map<std::string, Variable> &members)
+	{
+		for (auto &m : members) {
+			mMembers.insert(m.second.name);
+			addMembers(m.second.members);
+		}
+	}
+
+	void ShowMemberPopupWithMemberPath(std::vector<std::string> &memberPath, Variable &variable);
+
 	void SetVariables(const std::unordered_map<std::string, Variable> &variables)
 	{
 		mVariables = variables;
 		mMembers.clear();
 		for (auto &v : mVariables) {
-			for (auto &m : v.second.members) {
-				mMembers.insert(m.second.name);
-			}
+			addMembers(v.second.members);
 		}
 	}
 	const Palette& GetPalette() const { return mPaletteBase; }
