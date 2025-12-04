@@ -291,6 +291,9 @@ public:
 	void Undo(int aSteps = 1);
 	void Redo(int aSteps = 1);
 
+	bool HasPendingScrollToCursorRequest() { return mHasPendingScrollToCursorRequest; }
+	void ResetHasPendingScrollToCursorRequest() { mHasPendingScrollToCursorRequest = false; }
+
 	static const Palette& GetDarkPalette();
 	static const Palette& GetLightPalette();
 	static const Palette& GetRetroBluePalette();
@@ -358,6 +361,7 @@ private:
 	Coordinates FindWordStart(const Coordinates& aFrom) const;
 	Coordinates FindWordEnd(const Coordinates& aFrom) const;
 	Coordinates FindNextWord(const Coordinates& aFrom) const;
+	Coordinates FindNextMatch(const Coordinates& aFrom, const std::string &searchText, bool &didReachEndOut) const;
 	int GetCharacterIndex(const Coordinates& aCoordinates) const;
 	int GetCharacterColumn(int aLine, int aIndex) const;
 	int GetLineCharacterCount(int aLine) const;
@@ -383,6 +387,8 @@ private:
 	EditorState mState;
 	UndoBuffer mUndoBuffer;
 	int mUndoIndex;
+
+	bool mHasPendingScrollToCursorRequest = false;
 
 	int mTabSize;
 	bool mOverwrite;

@@ -8,6 +8,7 @@
 
 #include "imgui.h" // for imGui::GetCurrentWindow()
 #include "imgui_internal.h"
+#include "imgui_stdlib.h"
 
 // TODO
 // - multiline comments vs single-line: latter is blocking start of a ML
@@ -490,6 +491,47 @@ TextEditor::Coordinates TextEditor::FindNextWord(const Coordinates & aFrom) cons
 	return at;
 }
 
+bool isMatch(const std::string &searchText, const std::vector<TextEditor::Glyph> &line, int startIndex)
+{
+	if (startIndex + searchText.size() > line.size()) {
+		return false;
+	}
+	for (int i = 0; i < (int)searchText.size(); i++) {
+		if (searchText[i] != line[startIndex + i].mChar) {
+			return false;
+		}
+	}
+	return true;
+}
+
+TextEditor::Coordinates TextEditor::FindNextMatch(const Coordinates& aFrom, const std::string &searchText, bool &didReachEndOut) const
+{
+	Coordinates at = aFrom;
+	if (at.mLine >= (int)mLines.size())
+		return aFrom;
+
+	if (searchText.empty()) {
+		return aFrom;
+	}
+
+	int charI = GetCharacterIndex(aFrom);
+	while (at.mLine < mLines.size()) {
+		if (charI <= (int)mLines[at.mLine].size() - (int)searchText.size()) {
+			if (isMatch(searchText, mLines[at.mLine], charI)) {
+				return Coordinates(at.mLine, GetCharacterColumn(at.mLine, charI));
+			} else {
+				charI++;
+			}
+
+		} else {
+			charI = 0;
+			at.mLine++;
+		}
+	}
+	didReachEndOut = true;
+	return aFrom;
+}
+
 int TextEditor::GetCharacterIndex(const Coordinates& aCoordinates) const
 {
 	if (aCoordinates.mLine >= mLines.size())
@@ -774,6 +816,9 @@ void TextEditor::HandleKeyboardInputs()
 			EnterCharacter('\n', false);
 		else if (!IsReadOnly() && !ctrl && !alt && ImGui::IsKeyPressed(ImGuiKey_Tab))
 			EnterCharacter('\t', shift);
+		else if (ctrl && !shift && !alt && ImGui::IsKeyPressed(ImGuiKey_F)) {
+			ImGui::OpenPopup("Find");
+		}
 
 		if (!IsReadOnly() && !io.InputQueueCharacters.empty())
 		{
@@ -1231,6 +1276,7 @@ void TextEditor::Render()
 					i += currentWord.size();
 
 				} else {
+					// TODO: Out of bounds access here, fix!
 					auto textSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, mLineBuffer.data() + i, mLineBuffer.data() + i + 1, nullptr);
 
 					if (coords == scopeStartCoords || coords == scopeEndCoords) {
@@ -1381,6 +1427,38 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 	ColorizeInternal();
 	Render();
 
+	static std::string findText;
+	if (ImGui::IsPopupOpen("Find")) {
+		if (ImGui::BeginPopup("Find")) {
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Find");
+			ImGui::SameLine(0, 7);
+			ImGui::SetKeyboardFocusHere();
+			ImGui::InputText("##Find", &findText);
+			if (ImGui::IsKeyPressed(ImGuiKey_Enter)) {
+
+				Coordinates start = mState.mCursorPosition;
+				start.mColumn++;
+				bool didReachEnd = false;
+				mState.mCursorPosition = FindNextMatch(start, findText, didReachEnd);
+				if (didReachEnd) {
+					didReachEnd = false;
+					Coordinates coords = FindNextMatch(Coordinates(0, 0), findText, didReachEnd);
+					if (!didReachEnd) {
+						mState.mCursorPosition = coords;
+					}
+
+				}
+				mHasPendingScrollToCursorRequest = true;
+			}
+			if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+	} else {
+		findText.clear();
+	}
 	if (mHandleKeyboardInputs)
 		//ImGui::PopAllowKeyboardFocus();
 
@@ -1395,6 +1473,7 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 		auto timeEnd = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		mStartTime = timeEnd - 400;
 	}
+
 }
 
 void TextEditor::SetText(const std::string & aText)
