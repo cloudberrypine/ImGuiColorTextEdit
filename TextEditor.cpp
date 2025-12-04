@@ -1430,6 +1430,10 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 	static std::string findText;
 	if (ImGui::IsPopupOpen("Find")) {
 		if (ImGui::BeginPopup("Find")) {
+			if (HasSelection()) {
+				SetSelectionStart(mState.mCursorPosition);
+				SetSelectionEnd(mState.mCursorPosition);
+			}
 			ImGui::AlignTextToFramePadding();
 			ImGui::Text("Find");
 			ImGui::SameLine(0, 7);
