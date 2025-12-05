@@ -1428,6 +1428,7 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 	Render();
 
 	static std::string findText;
+	static std::string replaceText;
 	if (ImGui::IsPopupOpen("Find")) {
 		if (ImGui::BeginPopup("Find")) {
 			if (HasSelection()) {
@@ -1436,10 +1437,18 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 			}
 			ImGui::AlignTextToFramePadding();
 			ImGui::Text("Find");
-			ImGui::SameLine(0, 7);
-			ImGui::SetKeyboardFocusHere();
+			ImGui::SameLine(70);
+			if (ImGui::IsWindowAppearing()) {
+				ImGui::SetKeyboardFocusHere();
+			}
 			ImGui::InputText("##Find", &findText);
-			if (ImGui::IsKeyPressed(ImGuiKey_Enter)) {
+			ImGui::Dummy(ImVec2(1, 7));
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Replace");
+			ImGui::SameLine(70);
+			ImGui::InputText("##Replace", &replaceText);
+			ImGui::Dummy(ImVec2(1, 7));
+			if (ImGui::Button("Next") || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
 
 				Coordinates start = mState.mCursorPosition;
 				start.mColumn++;
@@ -1455,6 +1464,24 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 				}
 				mHasPendingScrollToCursorRequest = true;
 			}
+			ImGui::SameLine(0, 7);
+			if (ImGui::Button("Replace All")) {
+				Coordinates searchCoords = Coordinates(0, 0);
+				while (true) {
+					bool didReachEnd = false;
+					Coordinates matchCoords = FindNextMatch(searchCoords, findText, didReachEnd);
+					if (didReachEnd) {
+						break;
+					}
+
+					int charIndex = GetCharacterIndex(matchCoords);
+					DeleteRange(matchCoords, Coordinates(matchCoords.mLine, GetCharacterColumn(matchCoords.mLine, charIndex + findText.size())));
+					InsertTextAt(matchCoords, replaceText.c_str());
+					ColorizeRange(matchCoords.mLine, matchCoords.mLine + 1);
+					searchCoords = Coordinates(matchCoords.mLine, GetCharacterColumn(matchCoords.mLine, charIndex + replaceText.size()));
+				}
+
+			}
 			if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
 				ImGui::CloseCurrentPopup();
 			}
@@ -1462,6 +1489,7 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 		}
 	} else {
 		findText.clear();
+		replaceText.clear();
 	}
 	if (mHandleKeyboardInputs)
 		//ImGui::PopAllowKeyboardFocus();
