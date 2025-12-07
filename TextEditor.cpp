@@ -1276,14 +1276,17 @@ void TextEditor::Render()
 					i += currentWord.size();
 
 				} else {
-					// TODO: Out of bounds access here, fix!
-					auto textSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, mLineBuffer.data() + i, mLineBuffer.data() + i + 1, nullptr);
+
+					char str[2] = {(char)line[i].mChar, 0};
+
+					auto textSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, str, str + 1, nullptr);
 
 					if (coords == scopeStartCoords || coords == scopeEndCoords) {
 						const ImVec2 newOffset(textScreenPos.x + highlightBufferOffset.x, textScreenPos.y + highlightBufferOffset.y);
 						drawList->AddLine(newOffset + ImVec2(0, textSize.y - 1), newOffset + textSize + ImVec2(0, -1), IM_COL32(200, 200, 200, 255));
 					}
 					highlightBufferOffset.x += textSize.x;
+
 					i += 1;
 				}
 			}
