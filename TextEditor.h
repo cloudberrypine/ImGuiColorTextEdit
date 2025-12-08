@@ -292,7 +292,8 @@ public:
 	void Redo(int aSteps = 1);
 
 	bool HasPendingScrollToCursorRequest() { return mHasPendingScrollToCursorRequest; }
-	void ResetHasPendingScrollToCursorRequest() { mHasPendingScrollToCursorRequest = false; }
+	void ResetHasPendingScrollToCursorRequest() { mHasPendingScrollToCursorRequest = false; pendingScrollRequestWantsCentered = false; }
+	bool pendingScrollRequestWantsCentered = false;
 
 	static const Palette& GetDarkPalette();
 	static const Palette& GetLightPalette();

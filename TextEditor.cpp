@@ -1466,6 +1466,7 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 
 				}
 				mHasPendingScrollToCursorRequest = true;
+				pendingScrollRequestWantsCentered = true;
 			}
 			ImGui::SameLine(0, 7);
 			if (ImGui::Button("Replace All")) {
@@ -1629,7 +1630,10 @@ void TextEditor::EnterCharacter(ImWchar aChar, bool aShift)
 				}
 				else
 				{
-					line.insert(line.begin(), Glyph('\t', TextEditor::PaletteIndex::Background));
+					line.insert(line.begin(), Glyph(' ', TextEditor::PaletteIndex::Background));
+					line.insert(line.begin(), Glyph(' ', TextEditor::PaletteIndex::Background));
+					line.insert(line.begin(), Glyph(' ', TextEditor::PaletteIndex::Background));
+					line.insert(line.begin(), Glyph(' ', TextEditor::PaletteIndex::Background));
 					modified = true;
 				}
 			}
@@ -1674,6 +1678,15 @@ void TextEditor::EnterCharacter(ImWchar aChar, bool aShift)
 			DeleteSelection();
 		}
 	} // HasSelection
+
+	if (aChar == '\t') {
+		ImWchar c = ' ';
+		EnterCharacter(c, aShift);
+		EnterCharacter(c, aShift);
+		EnterCharacter(c, aShift);
+		EnterCharacter(c, aShift);
+		return;
+	}
 
 	auto coord = GetActualCursorCoordinates();
 	u.mAddedStart = coord;
@@ -2807,6 +2820,8 @@ void TextEditor::EnsureCursorVisible()
 		ImGui::SetScrollX(std::max(0.0f, len + mTextStart - 4));
 	if (len + mTextStart > right - 4)
 		ImGui::SetScrollX(std::max(0.0f, len + mTextStart + 4 - width));
+
+	mHasPendingScrollToCursorRequest = true;
 }
 
 int TextEditor::GetPageSize() const
