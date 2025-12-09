@@ -1491,9 +1491,6 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 			}
 			ImGui::EndPopup();
 		}
-	} else {
-		findText.clear();
-		replaceText.clear();
 	}
 	if (mHandleKeyboardInputs)
 		//ImGui::PopAllowKeyboardFocus();
