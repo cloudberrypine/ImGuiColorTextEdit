@@ -755,7 +755,7 @@ void TextEditor::HandleKeyboardInputs()
 	auto ctrl = io.KeyCtrl;
 	auto alt = io.KeyAlt;
 
-	if (ImGui::IsWindowFocused())
+	if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered())
 	{
 		if (ImGui::IsWindowHovered())
 			ImGui::SetMouseCursor(ImGuiMouseCursor_TextInput);
