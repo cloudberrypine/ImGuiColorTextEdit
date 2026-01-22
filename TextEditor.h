@@ -221,6 +221,7 @@ public:
 	void SetBreakpoints(const Breakpoints& aMarkers) { mBreakpoints = aMarkers; }
 	void setRunLines(const std::unordered_map<int, std::vector<int>> &aRunLines) { mRunLines = aRunLines; }
 	void SetAwaitLine(int line) { mAwaitLine = line; }
+	int GetAwaitLine() const { return mAwaitLine; }
 	void SetAwaitLineBlinkGeneration(int generation) {
 		if (generation != mAwaitLineBlinkGeneration) {
 			mAwaitLineBlinkGeneration = generation;
@@ -300,6 +301,7 @@ public:
 
 	bool HasPendingScrollToCursorRequest() { return mHasPendingScrollToCursorRequest; }
 	void ResetHasPendingScrollToCursorRequest() { mHasPendingScrollToCursorRequest = false; pendingScrollRequestWantsCentered = false; }
+	void RequestScrollToCursor() { mHasPendingScrollToCursorRequest = true; }
 	bool pendingScrollRequestWantsCentered = false;
 
 	static const Palette& GetDarkPalette();
