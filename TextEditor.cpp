@@ -1078,6 +1078,13 @@ void TextEditor::Render()
 				drawList->AddRectFilled(start, end, mPalette[(int)PaletteIndex::Breakpoint]);
 			}
 
+			// Draw await line (yellow highlight for coroutine await position)
+			if (mAwaitLine == lineNo)
+			{
+				auto end = ImVec2(lineStartScreenPos.x + contentSize.x + 2.0f * scrollX, lineStartScreenPos.y + mCharAdvance.y);
+				drawList->AddRectFilled(start, end, IM_COL32(255, 200, 50, 80));  // Yellow/amber highlight
+			}
+
 			// Draw error markers
 			auto errorIt = mErrorMarkers.find(lineNo + 1);
 			if (errorIt != mErrorMarkers.end())

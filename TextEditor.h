@@ -220,6 +220,7 @@ public:
 	void SetErrorMarkers(const ErrorMarkers& aMarkers) { mErrorMarkers = aMarkers; }
 	void SetBreakpoints(const Breakpoints& aMarkers) { mBreakpoints = aMarkers; }
 	void setRunLines(const std::unordered_map<int, std::vector<int>> &aRunLines) { mRunLines = aRunLines; }
+	void SetAwaitLine(int line) { mAwaitLine = line; }
 
 	void Render(const char* aTitle, const ImVec2& aSize = ImVec2(), bool aBorder = false);
 	void SetText(const std::string& aText);
@@ -421,6 +422,7 @@ private:
 	bool mCheckComments;
 	Breakpoints mBreakpoints;
 	std::unordered_map<int, std::vector<int>> mRunLines;
+	int mAwaitLine = -1;
 	ErrorMarkers mErrorMarkers;
 	ImVec2 mCharAdvance;
 	Coordinates mInteractiveStart, mInteractiveEnd;
