@@ -1082,7 +1082,23 @@ void TextEditor::Render()
 			if (mAwaitLine == lineNo)
 			{
 				auto end = ImVec2(lineStartScreenPos.x + contentSize.x + 2.0f * scrollX, lineStartScreenPos.y + mCharAdvance.y);
-				drawList->AddRectFilled(start, end, IM_COL32(255, 200, 50, 80));  // Yellow/amber highlight
+
+				// Calculate alpha with blink effect
+				int alpha = 80;
+				if (mAwaitLineBlinkStartTime >= 0.0f) {
+					float currentTime = (float)ImGui::GetTime();
+					float elapsed = currentTime - mAwaitLineBlinkStartTime;
+					float blinkDuration = 0.4f;  // Total blink animation duration
+
+					if (elapsed < blinkDuration) {
+						// Quick pulse: fade up then down
+						float t = elapsed / blinkDuration;
+						float blinkFactor = sinf(t * 3.14159f);  // Goes 0->1->0 over the duration
+						alpha = 80 + (int)(120 * blinkFactor);  // Range from 80 to 200
+					}
+				}
+
+				drawList->AddRectFilled(start, end, IM_COL32(255, 200, 50, alpha));  // Yellow/amber highlight
 			}
 
 			// Draw error markers

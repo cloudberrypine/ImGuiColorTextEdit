@@ -221,6 +221,12 @@ public:
 	void SetBreakpoints(const Breakpoints& aMarkers) { mBreakpoints = aMarkers; }
 	void setRunLines(const std::unordered_map<int, std::vector<int>> &aRunLines) { mRunLines = aRunLines; }
 	void SetAwaitLine(int line) { mAwaitLine = line; }
+	void SetAwaitLineBlinkGeneration(int generation) {
+		if (generation != mAwaitLineBlinkGeneration) {
+			mAwaitLineBlinkGeneration = generation;
+			mAwaitLineBlinkStartTime = (float)ImGui::GetTime();
+		}
+	}
 
 	void Render(const char* aTitle, const ImVec2& aSize = ImVec2(), bool aBorder = false);
 	void SetText(const std::string& aText);
@@ -423,6 +429,8 @@ private:
 	Breakpoints mBreakpoints;
 	std::unordered_map<int, std::vector<int>> mRunLines;
 	int mAwaitLine = -1;
+	int mAwaitLineBlinkGeneration = 0;
+	float mAwaitLineBlinkStartTime = -1.0f;
 	ErrorMarkers mErrorMarkers;
 	ImVec2 mCharAdvance;
 	Coordinates mInteractiveStart, mInteractiveEnd;
