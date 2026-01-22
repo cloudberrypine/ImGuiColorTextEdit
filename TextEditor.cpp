@@ -1084,7 +1084,7 @@ void TextEditor::Render()
 				auto end = ImVec2(lineStartScreenPos.x + contentSize.x + 2.0f * scrollX, lineStartScreenPos.y + mCharAdvance.y);
 
 				// Calculate alpha with blink effect
-				int alpha = 80;
+				int alpha = 60;
 				if (mAwaitLineBlinkStartTime >= 0.0f) {
 					float currentTime = (float)ImGui::GetTime();
 					float elapsed = currentTime - mAwaitLineBlinkStartTime;
@@ -1094,7 +1094,7 @@ void TextEditor::Render()
 						// Quick pulse: fade up then down
 						float t = elapsed / blinkDuration;
 						float blinkFactor = 1 - t;  // Goes 1->0 over the duration
-						alpha = 80 + (int)(110 * blinkFactor);  // Range from 80 to 200
+						alpha = 60 + (int)(110 * blinkFactor);  // Range from 80 to 200
 					}
 				}
 
