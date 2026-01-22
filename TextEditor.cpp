@@ -1088,13 +1088,13 @@ void TextEditor::Render()
 				if (mAwaitLineBlinkStartTime >= 0.0f) {
 					float currentTime = (float)ImGui::GetTime();
 					float elapsed = currentTime - mAwaitLineBlinkStartTime;
-					float blinkDuration = 0.4f;  // Total blink animation duration
+					float blinkDuration = 0.3f;  // Total blink animation duration
 
 					if (elapsed < blinkDuration) {
 						// Quick pulse: fade up then down
 						float t = elapsed / blinkDuration;
-						float blinkFactor = sinf(t * 3.14159f);  // Goes 0->1->0 over the duration
-						alpha = 80 + (int)(120 * blinkFactor);  // Range from 80 to 200
+						float blinkFactor = 1 - t;  // Goes 1->0 over the duration
+						alpha = 80 + (int)(110 * blinkFactor);  // Range from 80 to 200
 					}
 				}
 
