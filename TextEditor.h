@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <map>
 #include <regex>
+#include <functional>
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 
@@ -219,6 +220,12 @@ public:
 
 	void SetErrorMarkers(const ErrorMarkers& aMarkers) { mErrorMarkers = aMarkers; }
 	void SetBreakpoints(const Breakpoints& aMarkers) { mBreakpoints = aMarkers; }
+
+	// Callback for breakpoint toggle (line number is 0-based)
+	void SetOnBreakpointToggle(std::function<void(int)> callback) { mOnBreakpointToggle = callback; }
+
+	// Width of the breakpoint gutter (for click detection and drawing)
+	static constexpr float kBreakpointGutterWidth = 14.0f;
 	void setRunLines(const std::unordered_map<int, std::vector<int>> &aRunLines) { mRunLines = aRunLines; }
 	void SetAwaitLine(int line) { mAwaitLine = line; }
 	int GetAwaitLine() const { return mAwaitLine; }
@@ -429,6 +436,7 @@ private:
 
 	bool mCheckComments;
 	Breakpoints mBreakpoints;
+	std::function<void(int)> mOnBreakpointToggle;  // Callback for gutter click (line is 0-based)
 	std::unordered_map<int, std::vector<int>> mRunLines;
 	int mAwaitLine = -1;
 	int mAwaitLineBlinkGeneration = 0;

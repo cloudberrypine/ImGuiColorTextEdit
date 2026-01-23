@@ -37,7 +37,7 @@ TextEditor::TextEditor()
 	, mTextChanged(false)
 	, mColorizerEnabled(true)
 	, mTextStart(20.0f)
-	, mLeftMargin(10)
+	, mLeftMargin(24)  // Increased from 10 to add room for breakpoint gutter
 	, mCursorPositionChanged(false)
 	, mColorRangeMin(0)
 	, mColorRangeMax(0)
@@ -842,6 +842,28 @@ void TextEditor::HandleMouseInputs()
 
 	if (ImGui::IsWindowHovered())
 	{
+		// Check for click in breakpoint gutter
+		if (ImGui::IsMouseClicked(0) && mOnBreakpointToggle)
+		{
+			ImVec2 mousePos = ImGui::GetMousePos();
+			ImVec2 origin = ImGui::GetCursorScreenPos();
+			float scrollY = ImGui::GetScrollY();
+
+			// Calculate relative position from content origin
+			float relativeX = mousePos.x - origin.x;
+
+			// Check if click is in the gutter area (before the line numbers)
+			if (relativeX >= 0 && relativeX < kBreakpointGutterWidth)
+			{
+				// Calculate which line was clicked
+				int clickedLine = (int)((mousePos.y - origin.y + scrollY) / mCharAdvance.y);
+				if (clickedLine >= 0 && clickedLine < (int)mLines.size())
+				{
+					mOnBreakpointToggle(clickedLine);
+				}
+			}
+		}
+
 		if (!alt)
 		{
 			auto click = ImGui::IsMouseClicked(0);
@@ -1076,6 +1098,12 @@ void TextEditor::Render()
 			{
 				auto end = ImVec2(lineStartScreenPos.x + contentSize.x + 2.0f * scrollX, lineStartScreenPos.y + mCharAdvance.y);
 				drawList->AddRectFilled(start, end, mPalette[(int)PaletteIndex::Breakpoint]);
+
+				// Draw red circle in the gutter for breakpoint
+				float radius = mCharAdvance.y * 0.35f;
+				float gutterCenterX = lineStartScreenPos.x + kBreakpointGutterWidth / 2.0f;
+				float centerY = lineStartScreenPos.y + mCharAdvance.y / 2.0f;
+				drawList->AddCircleFilled(ImVec2(gutterCenterX, centerY), radius, IM_COL32(220, 50, 50, 255));
 			}
 
 			// Draw await line (yellow highlight for coroutine await position)
