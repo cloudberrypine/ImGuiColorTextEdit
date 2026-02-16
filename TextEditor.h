@@ -9,7 +9,9 @@
 #include <map>
 #include <regex>
 #include <functional>
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
+#endif
 #include "imgui.h"
 
 class TextEditor
